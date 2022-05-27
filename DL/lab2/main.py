@@ -34,7 +34,7 @@ def test(model, test_loader):
     model.eval()
     correct = 0
     with torch.no_grad():
-        for data, target in tqdm(test_loader):
+        for data, target in test_loader:
             data, target = data.cuda(), target.cuda()
             data, target = data.view(-1, 784), target.view(-1)
             output = model(data)

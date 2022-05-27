@@ -1,4 +1,7 @@
-data/
+MNIST/
+*.pkl
+*.pt
+*.model
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
