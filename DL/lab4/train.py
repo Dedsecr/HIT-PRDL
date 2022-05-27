@@ -19,6 +19,8 @@ def train(model, train_loader, optimizer, epochs, criterion, lr_scheduler,
             output, _ = model(data)
             loss = criterion(output, target)
             loss.backward()
+            # pred = output.data.max(1, keepdim=True)[1]
+            # print(data)
             optimizer.step()
 
         lr_scheduler.step()

@@ -13,7 +13,7 @@ def main(model, data, batch_size, epochs, lr, max_length, embedding_size):
                                                  embedding_size)
     model = model(embedding_size)
     model = model.cuda()
-    optimizer = optim.SGD(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss().cuda()
     lr_scheduler = optim.lr_scheduler.StepLR(optimizer,
                                              step_size=epochs // 5,
@@ -46,8 +46,8 @@ if __name__ == '__main__':
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--lr',
                         type=float,
-                        default=0.01,
-                        help='learning rate (default: 0.01)')
+                        default=0.001,
+                        help='learning rate (default: 0.001)')
     parser.add_argument('--max_length',
                         type=int,
                         default=32,
@@ -59,5 +59,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     model = get_model(args.model, args.data)
     data = get_data(args.data)
-    main(model, data, args.batch_size, args.epochs, args.lr,
-         args.max_length, args.embedding_size)
+    main(model, data, args.batch_size, args.epochs, args.lr, args.max_length,
+         args.embedding_size)
