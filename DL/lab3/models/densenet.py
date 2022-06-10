@@ -111,7 +111,7 @@ class DenseNet(nn.Module):
         self.dense3 = self._make_denseblock(block, n)
         self.bn = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
-        self.avgpool = nn.AvgPool2d(8)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(self.inplanes, num_classes)
 
         # Weight initialization
@@ -151,10 +151,10 @@ class DenseNet(nn.Module):
         x = self.relu(x)
 
         x = self.avgpool(x)
-        print(x.shape)
+        # print(x.shape)
         x = x.view(x.size(0), -1)
-        print(x.shape)
-        print(self.fc)
+        # print(x.shape)
+        # print(self.fc)
         x = self.fc(x)
 
         return x
