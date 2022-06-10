@@ -11,18 +11,14 @@ class WGAN_G(nn.Module):
 
         self.img_shape = img_shape
 
-        def block(in_feat, out_feat, normalize=True):
-            layers = [nn.Linear(in_feat, out_feat)]
-            if normalize:
-                layers.append(nn.BatchNorm1d(out_feat, 0.8))
-            layers.append(nn.LeakyReLU(0.2, inplace=True))
-            return layers
-
-        self.model = nn.Sequential(*block(n_noise, 128, normalize=False),
-                                   *block(128, 256), *block(256, 512),
-                                   *block(512, 1024),
-                                   nn.Linear(1024, int(np.prod(img_shape))),
-                                   nn.Tanh())
+        self.model = nn.Sequential(
+            nn.Linear(n_noise, 128),
+            nn.ReLU(True),
+            nn.Linear(128, 256),
+            nn.ReLU(True),
+            nn.Linear(256, 512),
+            nn.ReLU(True),
+            nn.Linear(512, int(np.prod(img_shape))),)
 
     def forward(self, z):
         img = self.model(z)

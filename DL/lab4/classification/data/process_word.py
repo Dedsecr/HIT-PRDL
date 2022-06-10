@@ -1,12 +1,10 @@
 import jieba
 import pandas as pd
 import re
-from gensim.models import word2vec
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+# remove punctuation
 def remove_punctuation(line):
     line = str(line)
     if line.strip() == '':
@@ -15,7 +13,7 @@ def remove_punctuation(line):
     line = rule.sub('', line)
     return line
 
-
+# get the stopwords
 def stopwordslist(filepath):
     stopwords = [
         line.strip()
@@ -23,7 +21,7 @@ def stopwordslist(filepath):
     ]
     return stopwords
 
-
+# formalize the data to the max length
 def formalize_data(x, max_length):
     if len(x) == 0:
         x = np.zeros((max_length))
@@ -35,7 +33,7 @@ def formalize_data(x, max_length):
         x = x[:max_length]
     return x
 
-
+# get the word2idx and word_num
 def get_word2idx(data, attr_new):
     wordlist = []
     for x in data[attr_new]:
@@ -46,7 +44,7 @@ def get_word2idx(data, attr_new):
     word_num = len(word2idx)
     return word2idx, word_num
 
-
+# process the word
 def process_word(data: pd.DataFrame, attr: str, max_length: int):
     print('Processing data...')
     attr_new = attr + '_processed'
@@ -64,7 +62,7 @@ def process_word(data: pd.DataFrame, attr: str, max_length: int):
     data[attr + '_id'] = data[attr_new].apply(
         lambda x: np.array([word2idx[w] for w in x.split()]))
 
-    # plot_length(data)
+    plot_length(data)
 
     print('Formalizing data...')
     data[attr + '_id'] = data[attr + '_id'].apply(formalize_data,

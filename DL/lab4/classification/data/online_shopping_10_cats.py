@@ -4,12 +4,13 @@ import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 from data.process_word import process_word
 import os
-import matplotlib.pyplot as plt
 
+# path of data
 path = './data/'
 data_path = path + 'online_shopping_10_cats.csv'
 
 
+# get tensor data
 def get_tensor_data(data):
     data_X = torch.Tensor([x for x in data['review_id']]).long()
     data_y = torch.Tensor(data['cat_id'].values).long()
@@ -18,7 +19,9 @@ def get_tensor_data(data):
 
 def online_shopping_10_cats(batch_size=64, max_length=32):
     print('Loading data...')
+    # path of dump data
     data_dump_path = path + 'online_shopping_10_cats_{}.pt'.format(max_length)
+    # if dump data exists, load it
     if os.path.exists(data_dump_path):
         print('Loading data from {}'.format(data_dump_path))
         train_dataset, val_dataset, test_dataset, word_num = torch.load(
@@ -27,12 +30,13 @@ def online_shopping_10_cats(batch_size=64, max_length=32):
         print('Loading data from {}'.format(data_path))
         data = pd.read_csv(data_path)
 
+        # factorize categorical data
         data['cat_id'] = data['cat'].factorize()[0]
-        # id_to_cat = dict(data[['cat_id', 'cat']].values)
+        # process text
         data, word_num = process_word(data, 'review', max_length)
 
+        # split data
         data_groups = list(data.groupby(lambda x: x % 5))
-
         data_train = pd.concat(
             [data_groups[1][1], data_groups[2][1], data_groups[3][1]])
         data_val = data_groups[4][1]
@@ -46,9 +50,11 @@ def online_shopping_10_cats(batch_size=64, max_length=32):
         val_dataset = TensorDataset(val_X, val_y)
         test_dataset = TensorDataset(test_X, test_y)
 
+        # dump data
         torch.save((train_dataset, val_dataset, test_dataset, word_num),
                    data_dump_path)
 
+    # get data loader
     train_loader = DataLoader(train_dataset,
                               batch_size=batch_size,
                               shuffle=True)
@@ -58,10 +64,3 @@ def online_shopping_10_cats(batch_size=64, max_length=32):
                              shuffle=False)
     print('Data loaded.')
     return train_loader, val_loader, test_loader, word_num
-
-
-if __name__ == '__main__':
-    train_loader, val_loader, test_loader = online_shopping_10_cats()
-    for data in train_loader:
-        print(data)
-        break

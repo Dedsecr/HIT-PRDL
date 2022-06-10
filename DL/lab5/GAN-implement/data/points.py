@@ -12,7 +12,8 @@ def points(batch_size=64):
     print('Loading data...')
     data = scipy.io.loadmat('data/points.mat')['xx']
     data = np.array(data)
-    
+    np.random.shuffle(data)
+
     # Create TensorDataset
     dataset = TensorDataset(torch.Tensor(data))
 

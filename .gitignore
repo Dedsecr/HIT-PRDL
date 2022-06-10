@@ -1,10 +1,14 @@
 MNIST/
 *.pkl
 *.pt
+*.pth
 *.model
 log/
 caltech-101/
 submit/
+plant-seedlings-classification/
+ref/
+images/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -3,23 +3,33 @@ import torch.nn as nn
 import torch.optim as optim
 from data import *
 from model import *
-from tqdm import tqdm
 import argparse
 from train import *
+from utils import *
+from torch.utils.tensorboard import SummaryWriter
 
 
-def main(model, batch_size, epochs, lr, max_length, embedding_size):
+def main(model_name, model, batch_size, epochs, lr, max_length, embedding_size,
+         cuda):
+    # Load data
     train_loader, val_loader, test_loader, word_num = online_shopping_10_cats(
         batch_size, max_length)
+    # Build model
     model = model(word_num, embedding_size, max_length=max_length)
-    model = model.cuda()
+    if cuda:
+        model = model.cuda()
+    # get optimizer
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.CrossEntropyLoss().cuda()
+    # get loss function and lr scheduler
+    criterion = nn.CrossEntropyLoss()
+    if cuda:
+        criterion = criterion.cuda()
     lr_scheduler = optim.lr_scheduler.StepLR(optimizer,
                                              step_size=epochs // 5,
                                              gamma=0.1)
-    train(model, train_loader, optimizer, epochs, criterion, lr_scheduler,
-          test_loader)
+    # train model
+    train(model_name, model, train_loader, optimizer, epochs, criterion,
+          lr_scheduler, test_loader, writer, cuda)
 
 
 if __name__ == '__main__':
@@ -49,7 +59,18 @@ if __name__ == '__main__':
                         type=int,
                         default=100,
                         help='embedding size (default: 100)')
+    parser.add_argument('--no-cuda',
+                        action='store_true',
+                        default=False,
+                        help='disables CUDA training')
     args = parser.parse_args()
+
+    # Initialize Tensorboard
+    writer = SummaryWriter('./log/model_{}'.format(args.model))
+
+    # set cuda
+    cuda = not args.no_cuda and torch.cuda.is_available()
+    # set model type
     model = get_model(args.model)
-    main(model, args.batch_size, args.epochs, args.lr, args.max_length,
-         args.embedding_size)
+    main(args.model, model, args.batch_size, args.epochs, args.lr,
+         args.max_length, args.embedding_size, cuda)

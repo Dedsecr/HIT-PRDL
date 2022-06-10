@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-
+from tqdm import tqdm, trange
 class LSTM(nn.Module):
 
     def __init__(self, input_size, hidden_size, device):
@@ -47,16 +46,38 @@ class LSTM(nn.Module):
 class LSTMRegressor(nn.Module):
 
     def __init__(self,
-                 input_size=4,
-                 target_size=2,
-                 hidden_size=64,
+                 input_size,
+                 target_size,
+                 length,
+                 hidden_size=32,
                  device='cuda'):
         super(LSTMRegressor, self).__init__()
+        self.output_size = hidden_size * length
         self.lstm = LSTM(input_size, hidden_size, device=device)
-        self.fc = nn.Linear(hidden_size, target_size)
+        self.fc1 = nn.Linear(self.output_size, 2048)
+        self.relu = torch.nn.ReLU()
+        self.fc2 = torch.nn.Linear(2048, 256)
+        self.fc3 = torch.nn.Linear(256, target_size)
+        assert input_size == 1
+        assert target_size == 1
 
-    def forward(self, input):
+    def _forward(self, input):
         output = self.lstm(input)
-        output = output[:, -1, :]
-        output = self.fc(output)
+        output = F.relu(
+            self.fc1(output.contiguous().view(-1, self.output_size)))
+        output = F.relu(self.fc2(output))
+        output = self.fc3(output)
         return output
+
+    def forward(self, input, true_target_size=1):
+        outputs = None
+        ite = range(true_target_size) if true_target_size == 1 else trange(true_target_size)
+        for i in ite:
+            output = self._forward(input)
+            if outputs is None:
+                outputs = output
+            else:
+                outputs = torch.cat((outputs, output), dim=1)
+            input = input[:, 1:, :]
+            input = torch.cat((input, output.unsqueeze(1)), dim=1)
+        return outputs

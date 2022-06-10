@@ -22,6 +22,7 @@ def postprocess(images):
     images = images.transpose(0, 2, 3, 1)
     return images
 
+
 def save_video(visuals, path):
     gifs = []
     import torch
@@ -30,12 +31,19 @@ def save_video(visuals, path):
     for img in visuals:
         x = (img + 1) / 2
         x = x.clamp_(0, 1)
-        grid = make_grid(x.data.cpu(), nrow=1, padding=0, pad_value=0,
-                         normalize=False, range=None, scale_each=None)
-        ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).to('cpu', torch.uint8).numpy()
+        grid = make_grid(x.data.cpu(),
+                         nrow=1,
+                         padding=0,
+                         pad_value=0,
+                         normalize=False,
+                         range=None,
+                         scale_each=None)
+        ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).to('cpu',
+                                                          torch.uint8).numpy()
         ndarr = ndarr.transpose((1, 2, 0))
         gifs.append(ndarr)
     imageio.mimwrite(path, gifs)
+
 
 def save_frame(visuals, path):
     from torchvision.utils import save_image as th_save
@@ -43,59 +51,93 @@ def save_frame(visuals, path):
     x = x.clamp_(0, 1)
     th_save(x.data.cpu(), path, nrow=1, padding=0)
 
+
 def resize_image(img, size):
     return torch.nn.functional.interpolate(img, (size, size), mode='bilinear')
+
 
 def parse_args():
     """Parses arguments."""
     parser = argparse.ArgumentParser(
         description='Synthesize images with pre-trained models.')
-    parser.add_argument('model_name', type=str,
+    parser.add_argument('model_name',
+                        type=str,
                         help='Name to the pre-trained model.')
-    parser.add_argument('--save_dir', type=str, default=None,
-                        help='Directory to save the results. If not specified, '
-                             'the results will be saved to '
-                             '`work_dirs/synthesis/` by default. '
-                             '(default: %(default)s)')
-    parser.add_argument('-N', '--num_samples', type=int, default=5,
+    parser.add_argument(
+        '--save_dir',
+        type=str,
+        default=None,
+        help='Directory to save the results. If not specified, '
+        'the results will be saved to '
+        '`work_dirs/synthesis/` by default. '
+        '(default: %(default)s)')
+    parser.add_argument('-N',
+                        '--num_samples',
+                        type=int,
+                        default=5,
                         help='Number of samples used for visualization. '
-                             '(default: %(default)s)')
-    parser.add_argument('-K', '--num_semantics', type=int, default=5,
+                        '(default: %(default)s)')
+    parser.add_argument('-K',
+                        '--num_semantics',
+                        type=int,
+                        default=5,
                         help='Number of semantic boundaries corresponding to '
-                             'the top-k eigen values. (default: %(default)s)')
-    parser.add_argument('--generate_html', type=bool_parser, default=False,
+                        'the top-k eigen values. (default: %(default)s)')
+    parser.add_argument('--generate_html',
+                        type=bool_parser,
+                        default=False,
                         help='Whether to use HTML page to visualize the '
-                             'synthesized results. (default: %(default)s)')
-    parser.add_argument('--save_raw_synthesis', type=bool_parser, default=True,
+                        'synthesized results. (default: %(default)s)')
+    parser.add_argument('--save_raw_synthesis',
+                        type=bool_parser,
+                        default=True,
                         help='Whether to save raw synthesis. '
-                             '(default: %(default)s)')
-    parser.add_argument('--seed', type=int, default=0,
+                        '(default: %(default)s)')
+    parser.add_argument('--seed',
+                        type=int,
+                        default=0,
                         help='Seed for sampling. (default: %(default)s)')
-    parser.add_argument('--start_distance', type=float, default=-2.0,
+    parser.add_argument('--start_distance',
+                        type=float,
+                        default=-2.0,
                         help='Start point for manipulation on each semantic. '
-                             '(default: %(default)s)')
-    parser.add_argument('--end_distance', type=float, default=2.0,
+                        '(default: %(default)s)')
+    parser.add_argument('--end_distance',
+                        type=float,
+                        default=2.0,
                         help='Ending point for manipulation on each semantic. '
-                             '(default: %(default)s)')
-    parser.add_argument('--step', type=int, default=21,
+                        '(default: %(default)s)')
+    parser.add_argument('--step',
+                        type=int,
+                        default=21,
                         help='Manipulation step on each semantic. '
-                             '(default: %(default)s)')
-    parser.add_argument('--trunc_psi', type=float, default=0.7,
+                        '(default: %(default)s)')
+    parser.add_argument('--trunc_psi',
+                        type=float,
+                        default=0.7,
                         help='Psi factor used for truncation. This is '
-                             'particularly applicable to StyleGAN (v1/v2). '
-                             '(default: %(default)s)')
-    parser.add_argument('--trunc_layers', type=int, default=8,
+                        'particularly applicable to StyleGAN (v1/v2). '
+                        '(default: %(default)s)')
+    parser.add_argument('--trunc_layers',
+                        type=int,
+                        default=8,
                         help='Number of layers to perform truncation. This is '
-                             'particularly applicable to StyleGAN (v1/v2). '
-                             '(default: %(default)s)')
-    parser.add_argument('--viz_size', type=int, default=256,
+                        'particularly applicable to StyleGAN (v1/v2). '
+                        '(default: %(default)s)')
+    parser.add_argument('--viz_size',
+                        type=int,
+                        default=256,
                         help='Size of images to visualize on the HTML page. '
-                             '(default: %(default)s)')
-    parser.add_argument('--randomize_noise', type=bool_parser, default=False,
+                        '(default: %(default)s)')
+    parser.add_argument('--randomize_noise',
+                        type=bool_parser,
+                        default=False,
                         help='Whether to randomize the layer-wise noise. This '
-                             'is particularly applicable to StyleGAN (v1/v2). '
-                             '(default: %(default)s)')
-    parser.add_argument('--cuda', type=bool_parser, default=True,
+                        'is particularly applicable to StyleGAN (v1/v2). '
+                        '(default: %(default)s)')
+    parser.add_argument('--cuda',
+                        type=bool_parser,
+                        default=True,
                         help='Whether to use cuda.')
 
     return parser.parse_args()
@@ -133,7 +175,6 @@ def main():
     if args.save_raw_synthesis:
         os.makedirs(frame_dir, exist_ok=True)
 
-
     # Build generation and get synthesis kwargs.
     print(f'Building generator for model `{args.model_name}` ...')
     generator = build_generator(**model_config)
@@ -160,7 +201,9 @@ def main():
     generator.eval()
     print(f'Finish loading checkpoint.')
 
-    directions = [torch.randn(num_sam, generator.z_space_dim) for _ in range(num_sem)]
+    directions = [
+        torch.randn(num_sam, generator.z_space_dim) for _ in range(num_sem)
+    ]
     weight = generator.__getattr__('layer0').weight
     weight = weight.flip(2, 3).permute(1, 0, 2, 3).flatten(1)
 
@@ -168,7 +211,17 @@ def main():
     # TODO factorize the weight of layer0 to get the directions
     # run: python sefa.py pggan_celebahq1024 --cuda false/true
 
-    directions = ...
+    eigenvalues, eigenvectors = torch.eig(torch.mm(weight, weight.T),
+                                          eigenvectors=True)
+    evalsarg = torch.argsort(eigenvalues[:, 0], descending=True)
+
+    directions = [
+        torch.Tensor(
+            np.array([
+                eigenvectors[:, evalsarg[i]].detach().cpu().numpy()
+                for _ in range(num_sem)
+            ])) for i in range(num_sem)
+    ]
     ################
 
     if args.cuda:
@@ -186,7 +239,7 @@ def main():
     visual_list = [[] for _ in range(num_sem)]
     with torch.no_grad():
         video_list = []
-        for s in tqdm(args.step):
+        for s in tqdm(range(args.step)):
             row_list = []
             images = generator(code, **synthesis_kwargs)['image']
             images = resize_image(images, args.viz_size)
@@ -201,7 +254,8 @@ def main():
             video_list.append(torch.cat(row_list, dim=3))
         save_video(video_list, os.path.join(job_dir, prefix + '.mov'))
         for i, v in enumerate(visual_list):
-            save_frame(torch.cat(v, dim=3), os.path.join(frame_dir, f'frame{i}.png'))
+            save_frame(torch.cat(v, dim=3),
+                       os.path.join(frame_dir, f'frame{i}.png'))
     print(f'Finish synthesizing.')
 
 
