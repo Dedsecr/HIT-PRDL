@@ -1,0 +1,46 @@
+% !TeX encoding = UTF-8
+% !TeX program = xelatex
+
+\documentclass{hitreport}
+
+
+% 报告基本配置，加载宏包等全局配置
+\input{hitsetup}
+\usepackage{natbib}
+\setcitestyle{numbers,square}
+\usepackage[ruled]{algorithm2e}
+
+\begin{document}
+
+% 封面
+\maketitle
+
+\frontmatter
+%\input{data/abstract}
+
+% 目录
+\tableofcontents
+
+
+% 正文部分
+\mainmatter
+\input{data/chap01}
+\input{data/chap02}
+\input{data/chap03}
+
+
+% 其他部分
+\backmatter
+
+% 参考文献
+%\bibliography{ref/refs}  % 参考文献使用 BibTeX 编译
+% \printbibliography       % 参考文献使用 BibLaTeX 编译
+\bibliographystyle{IEEEtran}
+\bibliography{example}
+
+% 附录
+%\appendix
+%\input{data/appendix}
+
+
+\end{document}

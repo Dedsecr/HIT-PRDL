@@ -151,10 +151,7 @@ class DenseNet(nn.Module):
         x = self.relu(x)
 
         x = self.avgpool(x)
-        # print(x.shape)
         x = x.view(x.size(0), -1)
-        # print(x.shape)
-        # print(self.fc)
         x = self.fc(x)
 
         return x

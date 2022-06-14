@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-__all__ = ['vgg11', 'vgg13', 'vgg16', 'vgg19']
+__all__ = ['vgg11_b', 'vgg13_b', 'vgg16_b', 'vgg19_b']
 
 
 class VGG(nn.Module):
@@ -11,15 +11,15 @@ class VGG(nn.Module):
     def __init__(self, features, num_classes):
         super(VGG, self).__init__()
         self.features = features
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(512, 512),
+            nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(512, 512),
+            nn.Linear(4096, 4096),
             nn.ReLU(True),
-            nn.Linear(512, num_classes),
+            nn.Dropout(),
+            nn.Linear(4096, num_classes),
         )
         # Initialize weights
         for m in self.modules():
@@ -64,17 +64,17 @@ cfg = {
 }
 
 
-def vgg11(num_classes=10):
+def vgg11_b(num_classes=10):
     return VGG(make_layers(cfg['A']), num_classes=num_classes)
 
 
-def vgg13(num_classes=10):
+def vgg13_b(num_classes=10):
     return VGG(make_layers(cfg['B']), num_classes=num_classes)
 
 
-def vgg16(num_classes=10):
+def vgg16_b(num_classes=10):
     return VGG(make_layers(cfg['D']), num_classes=num_classes)
 
 
-def vgg19(num_classes=10):
+def vgg19_b(num_classes=10):
     return VGG(make_layers(cfg['E']), num_classes=num_classes)

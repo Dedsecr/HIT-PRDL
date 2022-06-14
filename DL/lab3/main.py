@@ -9,11 +9,10 @@ import argparse
 from train import *
 
 
-def main(model, batch_size, epochs, lr, cuda, only_test, dump_path, res_path,
-         img_size, data_preprocess):
+def main(model, batch_size, epochs, lr, cuda, only_test, res_path, img_size):
     # load data
-    train_loader, val_loader, test_loader, testId, idx2specie = plant_seedlings(
-        img_size=img_size, batch_size=batch_size, pre=data_preprocess)
+    train_loader, val_loader, test_loader, test_ids, idx2specie = plant_seedlings(
+        img_size=img_size, batch_size=batch_size)
     if cuda:
         model = model.cuda()
     # load optimizer and criterion
@@ -27,14 +26,14 @@ def main(model, batch_size, epochs, lr, cuda, only_test, dump_path, res_path,
     # train
     if not only_test:
         train(model, train_loader, optimizer, epochs, criterion, lr_scheduler,
-              val_loader, dump_path, cuda)
+              val_loader, res_path, cuda)
     # predict
-    model.load_state_dict(torch.load(dump_path))
+    model.load_state_dict(torch.load(res_path + 'model.pth'))
     results = predict(model, test_loader, cuda)
-    with open(res_path, 'w') as f:
+    with open(res_path + 'results.csv', 'w') as f:
         f.write('file,species\n')
         for i, result in enumerate(results):
-            f.write(str(testId[i]) + ',' + idx2specie[result.item()] + '\n')
+            f.write(str(test_ids[i]) + ',' + idx2specie[result.item()] + '\n')
 
 
 if __name__ == '__main__':
@@ -44,8 +43,21 @@ if __name__ == '__main__':
                         default='resnet20',
                         help='model name',
                         choices=[
-                            'resnet20', 'resnet32', 'densenet', 'vgg11',
-                            'vgg13', 'vgg16', 'vgg19'
+                            'resnet18',
+                            'resnet34',
+                            'resnet20',
+                            'resnet32',
+                            'resnet44',
+                            'resnet56',
+                            'densenet',
+                            'vgg11',
+                            'vgg13',
+                            'vgg16',
+                            'vgg19',
+                            'vgg11_b',
+                            'vgg13_b',
+                            'vgg16_b',
+                            'vgg19_b',
                         ])
     parser.add_argument('--batch-size',
                         type=int,
@@ -53,8 +65,8 @@ if __name__ == '__main__':
                         help='input batch size for training (default: 256)')
     parser.add_argument('--epochs',
                         type=int,
-                        default=35,
-                        help='number of epochs to train (default: 35)')
+                        default=40,
+                        help='number of epochs to train (default: 40)')
     parser.add_argument('--lr',
                         type=float,
                         default=0.001,
@@ -71,18 +83,13 @@ if __name__ == '__main__':
                         type=int,
                         default=60,
                         help='input image size (default: 60)')
-    parser.add_argument('--data-preprocess',
-                        action='store_true',
-                        default=False,
-                        help='data preprocess')
     args = parser.parse_args()
+    set_seed(2022)
 
-    path = './checkpoint/model_{}_bs{}_ep{}_img{}_dpre_{}'.format(
-        args.model, args.batch_size, args.epochs, args.img_size, args.data_preprocess)
-    if not os.path.exists(path):
-        os.makedirs(path)
-    dump_path = '{}/model.pth'.format(path)
-    res_path = '{}/result.csv'.format(path)
+    res_path = './checkpoint/model_{}_bs{}_ep{}_img{}/'.format(
+        args.model, args.batch_size, args.epochs, args.img_size)
+    if not os.path.exists(res_path):
+        os.makedirs(res_path)
     # args.model + '_' + str(args.batch_size)
 
     model = models.__dict__[args.model](12)
@@ -90,4 +97,4 @@ if __name__ == '__main__':
     # set cuda
     cuda = not args.no_cuda and torch.cuda.is_available()
     main(model, args.batch_size, args.epochs, args.lr, cuda, args.only_test,
-         dump_path, res_path, args.img_size, args.data_preprocess)
+         res_path, args.img_size)

@@ -10,101 +10,62 @@ from glob import glob
 import math
 from tqdm import tqdm
 import re
+from PIL import Image
 
 data_path = './data/plant-seedlings-classification/'
 
 
-def preprocess(images):
-    images_processed = []
-    for img in images:
-        # Use gaussian blur
-        blurImg = cv2.GaussianBlur(img, (5, 5), 0)
-
-        # Convert to HSV image
-        hsvImg = cv2.cvtColor(blurImg, cv2.COLOR_BGR2HSV)
-
-        # Create mask (parameters - green color range)
-        # lower_green = (25, 40, 50)
-        lower_green = (35, 43, 46)
-        upper_green = (77, 255, 255)
-        mask = cv2.inRange(hsvImg, lower_green, upper_green)
-
-        # Create bool mask
-        bMask = mask > 0
-
-        # Apply the mask
-        clear = np.zeros_like(img, np.uint8)  # Create empty image
-        clear[bMask] = img[bMask]  # Apply boolean mask to the origin image
-
-        images_processed.append(clear)  # Append image without backgroung
-
-    images_processed = np.array(images_processed)
-    return images_processed
-
-
-'''
-random rotate [-180, 180],
-random shift 0.3,
-random scale 0.3,
-random horizontal and vertical flip
-'''
-
-
-def load_dataset(files, img_size, label, pre):
-    trainImg = []
-    trainLabel = []
-    testId = []
+def load_dataset(files, img_size, label):
+    imgs = []
+    labels = []
+    test_ids = []
 
     transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((img_size, img_size)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(180),
     ])
 
-    for img in tqdm(files):
-        trainImg.append(
-            cv2.resize(cv2.imread(img),
-                       (img_size, img_size)))  # Get image (with resizing)
-        if label:
-            trainLabel.append(re.split(
-                '/|\\\\', img)[-2])  # Get image label (folder name)
-        else:
-            testId.append(re.split('/|\\\\', img)[-1])  # Images id's
+    if label:
+        for img in tqdm(files):
+            imgs.append(transform(Image.open(img).convert('RGB')))
+            labels.append(re.split('/|\\\\', img)[-2])
+    else:
+        for img in tqdm(files):
+            imgs.append(transform(Image.open(img).convert('RGB')))
+            test_ids.append(re.split('/|\\\\', img)[-1])
 
-    trainImg = np.array(trainImg)  # Train images set
-
-    # Preprocess images
-    if pre:
-        trainImg = preprocess(trainImg)
-    trainImg = torch.Tensor(trainImg).permute(0, 3, 1, 2)
+    imgs = torch.stack(imgs)
 
     if label:
-        trainLabel = np.array(trainLabel)  # Train labels set
+        labels = np.array(labels)
         specie2idx = {
             specie: idx
-            for idx, specie in enumerate(np.unique(trainLabel))
+            for idx, specie in enumerate(np.unique(labels))
         }
         idx2specie = {
             idx: specie
-            for idx, specie in enumerate(np.unique(trainLabel))
+            for idx, specie in enumerate(np.unique(labels))
         }
 
-        trainLabel = np.array([specie2idx[specie] for specie in trainLabel])
-        trainLabel = torch.from_numpy(trainLabel).long()
-        dataset = TensorDataset(transform(trainImg), trainLabel)
+        labels = np.array([specie2idx[specie] for specie in labels])
+        labels = torch.from_numpy(labels).long()
+        dataset = TensorDataset(imgs, labels)
         return dataset, idx2specie
     else:
-        dataset = TensorDataset(trainImg)
-        return dataset, testId
+        dataset = TensorDataset(imgs)
+        return dataset, test_ids
 
 
-def plant_seedlings(img_size=224, batch_size=256, pre=False):
+def plant_seedlings(img_size=224, batch_size=256):
     print('Loading data...')
-    data_dump_path = './data/plant-seedlings-classification_{}_{}.pt'.format(
-        img_size, pre)
+    data_dump_path = './data/plant-seedlings-classification_{}.pt'.format(
+        img_size)
     if os.path.exists(data_dump_path):
         print('Loading data from {}'.format(data_dump_path))
-        train_data, val_data, test_data, testId, idx2specie = torch.load(
+        train_data, val_data, test_data, test_ids, idx2specie = torch.load(
             data_dump_path)
     else:
         print('Loading data from {}'.format(data_path))
@@ -113,13 +74,13 @@ def plant_seedlings(img_size=224, batch_size=256, pre=False):
         files_train = glob(path_train)
         files_test = glob(path_test)
 
-        dataset, idx2specie = load_dataset(files_train, img_size, label=True, pre=pre)
+        dataset, idx2specie = load_dataset(files_train, img_size, label=True)
         train_data, val_data = random_split(
             dataset, [len(dataset) - len(dataset) // 10,
                       len(dataset) // 10])
-        test_data, testId = load_dataset(files_test, img_size, label=False, pre=pre)
+        test_data, test_ids = load_dataset(files_test, img_size, label=False)
 
-        torch.save((train_data, val_data, test_data, testId, idx2specie),
+        torch.save((train_data, val_data, test_data, test_ids, idx2specie),
                    data_dump_path)
 
     # Create DataLoaders
@@ -127,10 +88,10 @@ def plant_seedlings(img_size=224, batch_size=256, pre=False):
     val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
-    return train_loader, val_loader, test_loader, testId, idx2specie
+    return train_loader, val_loader, test_loader, test_ids, idx2specie
 
 
 if __name__ == '__main__':
-    train_loader, val_loader, test_loader, testId, idx2specie = plant_seedlings(
+    train_loader, val_loader, test_loader, test_ids, idx2specie = plant_seedlings(
     )
     print(idx2specie)

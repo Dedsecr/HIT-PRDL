@@ -7,11 +7,12 @@ from utils import *
 
 
 def train(model, train_loader, optimizer, epochs, criterion, lr_scheduler,
-          val_loader, dump_path, cuda):
+          val_loader, res_path, cuda):
     # Set model to training mode
     model.train()
     # Initialize accuracy
-    acc_best = 0
+    train_acc_best = 0
+    val_acc_best = 0
     # Iterate over epochs
     for epoch in range(epochs):
         model.train()
@@ -42,13 +43,18 @@ def train(model, train_loader, optimizer, epochs, criterion, lr_scheduler,
         # Print loss and accuracy
         print('Epoch: {}/{}, Loss: {:.2f}, Accuracy: {:.2f}'.format(
             epoch, epochs, Loss.avg, Acc.avg))
+        if Acc.avg > train_acc_best:
+            train_acc_best = Acc.avg
         # Evaluate model
-        acc = validate(model, val_loader, criterion, cuda)
+        val_acc = validate(model, val_loader, criterion, cuda)
         # Save model if accuracy is best
-        if acc > acc_best:
-            acc_best = acc
-            torch.save(model.state_dict(), dump_path)
-    print('Best accuracy: {:.2f}'.format(acc_best))
+        if val_acc > val_acc_best:
+            val_acc_best = val_acc
+            torch.save(model.state_dict(), res_path + 'model.pth')
+    print('Best accuracy: {:.2f}'.format(val_acc_best))
+    with open(res_path + 'acc.txt', 'w') as f:
+        f.write('Best train acc: {:.2f}\n'.format(train_acc_best))
+        f.write('Best val acc: {:.2f}\n'.format(val_acc_best))
 
 
 def validate(model, val_loader, criterion, cuda):

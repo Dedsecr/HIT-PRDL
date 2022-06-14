@@ -9,6 +9,10 @@ submit/
 plant-seedlings-classification/
 ref/
 images/
+DL_Lab7.zip
+DL/lab6/DL_Lab7/data
+DL/lab6/DL_Lab7/report/hitreport-v1.0.0/figures/
+DL/lab6/DL_Lab7/results
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
