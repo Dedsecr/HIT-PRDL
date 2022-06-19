@@ -15,18 +15,19 @@ from PIL import Image
 data_path = './data/plant-seedlings-classification/'
 
 
-def load_dataset(files, img_size, label):
+def load_dataset(files, img_size, label, data_transforms=['hf', 'vf', 'r']):
     imgs = []
     labels = []
     test_ids = []
 
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Resize((img_size, img_size)),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
-        transforms.RandomRotation(180),
-    ])
+    transform = [transforms.ToTensor(), transforms.Resize((img_size, img_size))]
+    if 'hf' in data_transforms:
+        transform.append(transforms.RandomHorizontalFlip())
+    if 'vf' in data_transforms:
+        transform.append(transforms.RandomVerticalFlip())
+    if 'r' in data_transforms:
+        transform.append(transforms.RandomRotation(180))
+    transform = transforms.Compose(transform)
 
     if label:
         for img in tqdm(files):
@@ -59,10 +60,11 @@ def load_dataset(files, img_size, label):
         return dataset, test_ids
 
 
-def plant_seedlings(img_size=224, batch_size=256):
+def plant_seedlings(img_size=224, batch_size=256, data_transforms=['hf', 'vf', 'r']):
     print('Loading data...')
-    data_dump_path = './data/plant-seedlings-classification_{}.pt'.format(
-        img_size)
+    print('data transforms:', data_transforms)
+    data_dump_path = './data/plant-seedlings-classification_{}_{}.pt'.format(
+        img_size, data_transforms)
     if os.path.exists(data_dump_path):
         print('Loading data from {}'.format(data_dump_path))
         train_data, val_data, test_data, test_ids, idx2specie = torch.load(
@@ -74,11 +76,11 @@ def plant_seedlings(img_size=224, batch_size=256):
         files_train = glob(path_train)
         files_test = glob(path_test)
 
-        dataset, idx2specie = load_dataset(files_train, img_size, label=True)
+        dataset, idx2specie = load_dataset(files_train, img_size, True, data_transforms)
         train_data, val_data = random_split(
             dataset, [len(dataset) - len(dataset) // 10,
                       len(dataset) // 10])
-        test_data, test_ids = load_dataset(files_test, img_size, label=False)
+        test_data, test_ids = load_dataset(files_test, img_size, False, data_transforms)
 
         torch.save((train_data, val_data, test_data, test_ids, idx2specie),
                    data_dump_path)

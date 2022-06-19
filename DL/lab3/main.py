@@ -8,15 +8,26 @@ from tqdm import tqdm
 import argparse
 from train import *
 
+def get_optimizer(optim_name, model, lr):
+    if optim_name == 'adam':
+        return optim.Adam(model.parameters(), lr=lr)
+    elif optim_name == 'sgd':
+        return optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    elif optim_name == 'rmsprop':
+        return optim.RMSprop(model.parameters(), lr=lr)
+    elif optim_name == 'adagrad':
+        return optim.Adagrad(model.parameters(), lr=lr)
+    else:
+        raise ValueError('Unknown optimizer')
 
-def main(model, batch_size, epochs, lr, cuda, only_test, res_path, img_size):
+def main(model, optim_name, batch_size, epochs, lr, cuda, only_test, res_path, img_size, data_transforms):
     # load data
     train_loader, val_loader, test_loader, test_ids, idx2specie = plant_seedlings(
-        img_size=img_size, batch_size=batch_size)
+        img_size=img_size, batch_size=batch_size, data_transforms=data_transforms)
     if cuda:
         model = model.cuda()
     # load optimizer and criterion
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = get_optimizer(optim_name, model, lr)
     criterion = nn.CrossEntropyLoss()
     if cuda:
         criterion = criterion.cuda()
@@ -45,10 +56,10 @@ if __name__ == '__main__':
                         choices=[
                             'resnet18',
                             'resnet34',
+                            'resnet18_se',
+                            'resnet34_se',
                             'resnet20',
                             'resnet32',
-                            'resnet44',
-                            'resnet56',
                             'densenet',
                             'vgg11',
                             'vgg13',
@@ -59,6 +70,11 @@ if __name__ == '__main__':
                             'vgg16_b',
                             'vgg19_b',
                         ])
+    parser.add_argument('--optim',
+                        type=str,
+                        default='adam',
+                        help='optimizer name',
+                        choices=['adam', 'sgd', 'adagrad', 'rmsprop'])
     parser.add_argument('--batch-size',
                         type=int,
                         default=256,
@@ -83,11 +99,17 @@ if __name__ == '__main__':
                         type=int,
                         default=60,
                         help='input image size (default: 60)')
+    parser.add_argument('--transform', 
+                        type=str,
+                        nargs='*',
+                        default=['hf', 'vf', 'r'],
+                        help='data transform')
+
     args = parser.parse_args()
     set_seed(2022)
 
-    res_path = './checkpoint/model_{}_bs{}_ep{}_img{}/'.format(
-        args.model, args.batch_size, args.epochs, args.img_size)
+    res_path = './checkpoint/model_{}_bs{}_ep{}_img{}_optim_{}_transform_{}/'.format(
+        args.model, args.batch_size, args.epochs, args.img_size, args.optim, args.transform)
     if not os.path.exists(res_path):
         os.makedirs(res_path)
     # args.model + '_' + str(args.batch_size)
@@ -96,5 +118,5 @@ if __name__ == '__main__':
 
     # set cuda
     cuda = not args.no_cuda and torch.cuda.is_available()
-    main(model, args.batch_size, args.epochs, args.lr, cuda, args.only_test,
-         res_path, args.img_size)
+    main(model, args.optim, args.batch_size, args.epochs, args.lr, cuda, args.only_test,
+         res_path, args.img_size, args.transform)

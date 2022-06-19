@@ -96,8 +96,6 @@ class DenseNet(nn.Module):
         self.growthRate = growthRate
         self.dropRate = dropRate
 
-        # self.inplanes is a global variable used across multiple
-        # helper functions
         self.inplanes = growthRate * 2
         self.conv1 = nn.Conv2d(3,
                                self.inplanes,
@@ -126,7 +124,6 @@ class DenseNet(nn.Module):
     def _make_denseblock(self, block, blocks):
         layers = []
         for i in range(blocks):
-            # Currently we fix the expansion ratio as the default value
             layers.append(
                 block(self.inplanes,
                       growthRate=self.growthRate,
